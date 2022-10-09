@@ -4,7 +4,8 @@
 export file_path='/root/offline/'
 
 ### 搜索.tar结尾的镜像文件
-export imgs_folder=`find $file_path -name  "*.tar"`
+##export imgs_folder=`find $file_path -name  "*.tar"`
+export imgs_folder=`find $file_path -type f | grep -E '*.tar$'`
 
 ### 目标仓库地址前缀
 export destRegistry="10.120.0.31:30880/daocloud"
