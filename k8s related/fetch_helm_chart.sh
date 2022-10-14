@@ -1,38 +1,12 @@
 #!/bin/bash
 
-#dce5_component
-#hwameistor
-#ghippo
-#kpanda
-#insight
-#insight-agent
-#kairship
-#amamba
-#skoala
-#mspider
-
-###helm chart repo name
 export helm_repo_name=(
-hwameistor
-ghippo-release
-kpanda-release
-insight-release
-kairship-release
-amamba-release
-skoala-release
-mspider
+hashicorp
 )
 
 ### helm chart url 顺序需要和helm chart repo name 对应
 export helm_repo_url=(
-http://hwameistor.io/hwameistor                         
-https://release.daocloud.io/chartrepo/ghippo            
-https://release.daocloud.io/chartrepo/kpanda            
-https://release.daocloud.io/chartrepo/insight           
-https://release.daocloud.io/chartrepo/kairship          
-https://release.daocloud.io/chartrepo/amamba            
-https://release.daocloud.io/chartrepo/skoala            
-https://release.daocloud.io/chartrepo/mspider           
+https://helm.releases.hashicorp.com
 )
 
 
@@ -50,7 +24,7 @@ done
 
 ####download directory
 ##create dirirectory
-download_path="./dce5_components/helm_chart"
+download_path="./hashicorp"
 mkdir -p $download_path
 
 
@@ -58,14 +32,16 @@ mkdir -p $download_path
 
 
 for repo_name in ${helm_repo_name[@]}; do 
+  echo -e "\n\n\n #################### download $repo_name Charts ################\n\n "
   chart_list=$(helm search repo $repo_name)
+  echo -e "$chart_list\n\n"
   num=`echo "$chart_list" | wc -l`
 #  echo $num
   for i in `seq $[ $num-1 ] -1 1`; do 
    # echo "$chart_list"  | tail -n $i | head -n 1 
     chart_name=`echo "$chart_list"  | tail -n $i | head -n 1 | awk  '{print $1}'`
     chart_version=`echo "$chart_list"  | tail -n $i | head -n 1 | awk  '{print $2}'`
-    echo  "pull helm chart $chart_name  version: $chart_version"
+    echo -e  "pull helm chart $chart_name  version: $chart_version\n"
     helm pull $chart_name --version $chart_version --destination  $download_path
   done 
 done
