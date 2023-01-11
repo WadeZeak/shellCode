@@ -73,14 +73,26 @@ fi
 
 
 
+pull_image_failed_mark=0
+
 for Chart in ${helm_chart_file_list[@]}; do
         #imgs=`helm template  "$Chart" 2> /dev/null  |grep "image:" | sed -e 's/^[ ]*//g'  | sort -n | uniq | sed -e 's/\"//g'`
         ## imgae: Register/Registry/ImgName:Version
-        img_list_tmp=$(helm template  "$Chart" 2> /dev/null  |grep "image:" | sed -e 's/^[ ]*//g' | sed -e 's/[ ]*$//g' -e "s/[\'\"]//g" -e 's/\s-//g' -e 's/^-//g' -e 's/^#//g'|sed -e 's/^[ ]*//g' | sort -u | uniq )
-        img_list=$(echo "$img_list_tmp" | awk '{print $2}')
-        
-        echo -e "\n\n\n\n#############download $Chart images###################\n"
-        echo -e "image list:\n$img_list\n\n\n\n"
+        echo -e "\n\n\n\n############# Download $Chart Images ###################\n"
+        helm_template_result=$(helm template  "$Chart" 2>&1 )
+        if [ $?  -eq 0 ]; then
+                img_list_tmp=$( echo "$helm_template_result"   |grep "image:" | sed -e 's/^[ ]*//g' | sed -e 's/[ ]*$//g' -e "s/[\'\"]//g" -e 's/\s-//g' -e 's/^-//g' -e 's/^#//g'|sed -e 's/^[ ]*//g' | sort -u | uniq )
+                img_list=$(echo "$img_list_tmp" | awk '{print $2}')
+                echo -e "Image list:\n$img_list\n\n\n\n"
+        else
+                echo -e "\nFailed to execute command helm template $Chart, the error as follows:"
+                echo -e "$helm_template_result"
+                echo -e "Helm Chart: $Chart" >> $PULLED_IMAGE_FAILED_LOG
+                echo -e "Action: Failed to execute command helm template $Chart" >> $PULLED_IMAGE_FAILED_LOG
+                echo -e  "Failure log: $helm_template_result\n\n" >> $PULLED_IMAGE_FAILED_LOG
+                echo -e "===================================== DIVIDING  LINE ==================================== \n\n" >> $PULLED_IMAGE_FAILED_LOG
+                continue
+        fi
         
 
         chart_file="${Chart##*/}"
@@ -88,7 +100,7 @@ for Chart in ${helm_chart_file_list[@]}; do
         if [ ! -d $img_folder_name ]; then
                 mkdir -p $download_path/$img_folder_name
         fi
-        echo -e "Create Image Folder $download_path/$img_folder_name\n\n"
+        echo -e "Create  image folder $download_path/$img_folder_name\n\n"
 
 
         ### 从helm template生成的yaml中 获取 Chart所需的img
@@ -172,27 +184,30 @@ for Chart in ${helm_chart_file_list[@]}; do
                         
                         imgCom=${imgName%%:*}
                         echo -e "pull  image:  $i"
-                        pull_image_result=`docker pull $i`
+                        pull_image_result=`docker pull $i 2>&1`
                         if [ $? -eq 0 ]; then
                                 echo -e "$pull_image_result"
                                 echo -e "\nsave image: $download_path/$img_folder_name/$imgCom-$imgVer.tar\n"
                                 ### 导出的镜像名字为 软件名称-版本.tar
                                 docker save -o  "$download_path/$img_folder_name/$imgCom-$imgVer.tar" $i
                         else
-                                echo -e "$pull_image_result"
-                                echo -e "Helm Chart: $Chart\n" >> $PULLED_IMAGE_FAILED_LOG    
-                                echo -e "Image: $i\n" $PULLED_IMAGE_FAILED_LOG
-                                echo -e "Result: failure\n" >> $PULLED_IMAGE_FAILED_LOG
-                                echo -e "Faliure Log:\n$pull_image_result\n\n\n\n" >> $PULLED_IMAGE_FAILED_LOG
+                                echo -e "$pull_image_result\n\n"
+                                echo -e "Helm Chart: $Chart" >> $PULLED_IMAGE_FAILED_LOG    
+                                echo -e "Action: Failed to pull image  $i" >> $PULLED_IMAGE_FAILED_LOG
+                                echo -e "Faliure Log:\n$pull_image_result\n\n" >> $PULLED_IMAGE_FAILED_LOG
+                                echo -e "===================================== DIVIDING  LINE ==================================== \n\n" >> $PULLED_IMAGE_FAILED_LOG
+                                pull_image_failed_mark=1
                         fi
         done
-        if [ $? -eq 0 ]; then
+        if [  $pull_image_failed_mark == 0 ] ; then
                 echo $Chart >> $file_path/$PULLED_IMAGES_HELM_CHART_LIST
                 sed -i "/$chart_file/d" $file_path/$WITHOUT_PULLING_IMAGES_HELM_CHART_LIST
-        fi 
+        else
+                pull_image_failed_mark=0
+        fi
+
 done
 
 echo  -e "\n\n\nThe image required for the helm chart under the $file_path directory has been pulled ! ! !\n\n"
 echo  -e "The log of image pull failure is in $PULLED_IMAGE_FAILED_LOG\n"
 echo -e "Please check the failure log to analyze the reason of image pull failure, and pull the image again"
-
