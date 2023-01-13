@@ -75,15 +75,15 @@ if [[ -n "$registry_user" ]]  && [[ -n "$registry_passwd"  ]]; then
         fi
         if [ $? -eq 0 ]; then
                 if [ $access_protocol_type == "http" ];then 
-                        echo -e "Skopeo login registry http://$destRegistry/$repository successfully ! ! !\n\n"
+                        echo -e "Skopeo login registry http://$destRegistry successfully ! ! !\n"
                 else
-                        echo -e "Skopeo login registry https://$destRegistry/$repository successfully ! ! !\n\n"
+                        echo -e "Skopeo login registry https://$destRegistry successfully ! ! !\n"
                 fi 
         else
                 if [ $access_protocol_type == "http" ];then
-                        echo -e "Skopeo login registry http://$destRegistry/$repository failed ! ! ! \n\n"
+                        echo -e "Skopeo login registry http://$destRegistry failed ! ! ! \n"
                 else
-                        echo -e "Skopeo login registry https://$destRegistry/$repository failed ! ! ! \n\n"
+                        echo -e "Skopeo login registry https://$destRegistry failed ! ! ! \n"
                 fi
                 echo -e "Please check the error message, the error is as follows:\n$skopeo_login_registry_result\n\n"
                 exit -1
@@ -91,9 +91,9 @@ if [[ -n "$registry_user" ]]  && [[ -n "$registry_passwd"  ]]; then
 
 elif [[  ! -n "$registry_user" ]]  && [[ ! -n "$registry_passwd"  ]]; then 
         if [ $access_protocol_type == "http" ]; then 
-                echo -e "Registry  http://$destRegistry/$repository can copy OCI image by skopeo without usernamme and password ! ! !\n\n"
+                echo -e "Registry  http://$destRegistry can copy OCI image by skopeo without usernamme and password ! ! !\n\n"
         else
-                echo -e "Registry  https://$destRegistry/$repository can copy OCI image by skopeo without usernamme and password ! ! !\n\n"
+                echo -e "Registry  https://$destRegistry can copy OCI image by skopeo without usernamme and password ! ! !\n\n"
         fi
 else
         echo -e "Rrgistry username and password format error, please check login configuration ! ! !\n\n"
